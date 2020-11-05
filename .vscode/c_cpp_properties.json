@@ -4,7 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "/usr/include/SDL2"
+                "/usr/include/SDL2",
+                "${workspaceFolder}/lib/magnum/src",
+                "${workspaceFolder}/lib/corrade/src"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/clang",
