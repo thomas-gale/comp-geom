@@ -15,14 +15,12 @@
 		"twxs.cmake",
 		"ms-vscode.cmake-tools",
 		"ms-vscode.cpptools",
-		"ms-python.python",
 		"mitaki28.vscode-clang",
-		"xaver.clang-format",
-		"robbowen.synthwave-vscode" // Very important
+		"xaver.clang-format"
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	"forwardPorts": [6006], // Tensorboard port
+	//"forwardPorts": [6006], // Tensorboard port
 
 	// Use 'postCreateCommand' to run commands after the container is created.
 	// "postCreateCommand": "uname -a",
