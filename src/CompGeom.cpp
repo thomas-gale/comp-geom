@@ -29,7 +29,6 @@ class CompGeom : public Platform::Application {
     Shaders::Phong shader_;
 
     Matrix4 projection_;
-    Color3 color_;
 };
 
 CompGeom::CompGeom(const Arguments& arguments)
@@ -41,9 +40,7 @@ CompGeom::CompGeom(const Arguments& arguments)
     axis_ = MeshTools::compile(Primitives::axis3D());
     point_ = MeshTools::compile(Primitives::squareSolid());
 
-    // Configure shader.
-    color_ = Color3::fromHsv({35.0_degf, 1.0f, 1.0f});
-
+    // Configure fixed info for shader.
     projection_ =
         Matrix4::perspectiveProjection(
             35.0_degf, Vector2{windowSize()}.aspectRatio(), 0.01f, 100.0f) *
@@ -57,13 +54,13 @@ void CompGeom::drawEvent() {
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
                                  GL::FramebufferClear::Depth);
     // Render Axis and Points
-    shader_.draw(axis_);
-    for (int i = 0; i < 5; ++i) {
-        for (int j = 0; j < 5; ++j) {
+    shader_.setAmbientColor(Color3(1, 1, 1));    
+    shader_.setTransformationMatrix(Matrix4::translation(Vector3(-4, -4, 0))).draw(axis_);
+    for (int i = -4; i <= 4; i+=2) {
+        for (int j = -4; j <= 4; j+=2) {
             shader_.setTransformationMatrix(
                 Matrix4::translation(Vector3(i, j, 0)));
-            shader_.setDiffuseColor(color_);
-            shader_.setAmbientColor(Color3::fromHsv({color_.hue(), 1.0f, 0.3f}));
+            shader_.setAmbientColor(Color3(float(i+4)/float(10), float(j+4)/float(10), 0));
             shader_.draw(point_);
         }
     }
