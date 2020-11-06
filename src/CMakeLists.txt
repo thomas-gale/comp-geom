@@ -9,7 +9,7 @@ CompGeom.cpp
 #PrimitivesExample.cpp
 )
 
-target_link_libraries(comp_geom PRIVATE
+target_link_libraries(comp_geom PRIVATE 
     Corrade::Main
     Magnum::Application
     Magnum::GL
