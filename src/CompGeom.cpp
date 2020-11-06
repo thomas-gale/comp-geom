@@ -24,6 +24,7 @@ class CompGeom : public Platform::Application {
   private:
     void drawEvent() override;
 
+    const int gridHeight_ = 10;
     GL::Mesh axis_{NoCreate};
     GL::Mesh point_{NoCreate};
     Shaders::Phong shader_;
@@ -41,10 +42,15 @@ CompGeom::CompGeom(const Arguments& arguments)
     point_ = MeshTools::compile(Primitives::squareSolid());
 
     // Configure fixed info for shader.
-    projection_ =
-        Matrix4::perspectiveProjection(
-            35.0_degf, Vector2{windowSize()}.aspectRatio(), 0.01f, 100.0f) *
-        Matrix4::translation(Vector3::zAxis(-20.0f));
+    projection_ = Matrix4::orthographicProjection(
+        Vector2{Vector2{windowSize()}.aspectRatio() * gridHeight_ + 1,
+                float(gridHeight_ + 1)},
+        -0.01f, 100.0f);
+
+    // Turn on 3D perspective projection.
+    /*Matrix4::perspectiveProjection(
+        35.0_degf, Vector2{windowSize()}.aspectRatio(), 0.01f, 100.0f) *
+    Matrix4::translation(Vector3::zAxis(-20.0f));*/
 
     shader_.setLightPositions({{7.0f, 5.0f, 2.5f, 0.0f}})
         .setProjectionMatrix(projection_);
@@ -55,14 +61,15 @@ void CompGeom::drawEvent() {
                                  GL::FramebufferClear::Depth);
     // Render Axis and Points
     shader_.setAmbientColor(Color3(1, 1, 1));
-    shader_.setTransformationMatrix(Matrix4::translation(Vector3(-4, -4, 0)))
+    shader_.setTransformationMatrix(Matrix4::translation(Vector3(-(gridHeight_/2), -(gridHeight_/2), 0)))
         .draw(axis_);
-    for (int i = -4; i <= 4; ++i) {
-        for (int j = -4; j <= 4; ++j) {
+    for (int i = -(gridHeight_/2); i <= gridHeight_/2; ++i) {
+        for (int j = -(gridHeight_/2); j <= (gridHeight_/2); ++j) {
             shader_.setTransformationMatrix(
-                Matrix4::translation(Vector3(i, j, 0)) * Matrix4::scaling(Vector3(0.5, 0.5, 0)));
+                Matrix4::translation(Vector3(i, j, 0)) *
+                Matrix4::scaling(Vector3(0.05, 0.05, 0)));
             shader_.setAmbientColor(
-                Color3(float(i + 4) / float(9), float(j + 4) / float(9), 0));
+                Color3(float(i + gridHeight_/2) / float(gridHeight_), float(j + gridHeight_/2) / float(gridHeight_), 0));
             shader_.draw(point_);
         }
     }
