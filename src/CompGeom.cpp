@@ -4,10 +4,12 @@
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/Math/Color.h>
 #include <Magnum/Math/Matrix4.h>
+#include <Magnum/MeshTools/Compile.h>
 #include <Magnum/MeshTools/CompressIndices.h>
 #include <Magnum/MeshTools/Interleave.h>
 #include <Magnum/Platform/Sdl2Application.h>
 #include <Magnum/Primitives/Cube.h>
+#include <Magnum/Primitives/Square.h>
 #include <Magnum/Shaders/Phong.h>
 #include <Magnum/Trade/MeshData.h>
 
@@ -33,9 +35,10 @@ CompGeom::CompGeom(const Arguments& arguments)
     GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
     GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
 
-    Trade::MeshData cube = Primitives::cubeSolid();
+    //Trade::MeshData cube = Primitives::cubeSolid();
+    //Trade::MeshData point = Primitives::squareSolid();
 
-    GL::Buffer vertices;
+    /*GL::Buffer vertices;
     vertices.setData(MeshTools::interleave(cube.positions3DAsArray(),
                                            cube.normalsAsArray()));
 
@@ -48,10 +51,13 @@ CompGeom::CompGeom(const Arguments& arguments)
         .setCount(cube.indexCount())
         .addVertexBuffer(std::move(vertices), 0, Shaders::Phong::Position{},
                          Shaders::Phong::Normal{})
-        .setIndexBuffer(std::move(indices), 0, compressed.second);
+        .setIndexBuffer(std::move(indices), 0, compressed.second);*/
 
     // This is a verbose version of:
     //_mesh = MeshTools::compile(Primitives::cubeSolid());
+
+
+    _mesh = MeshTools::compile(Primitives::squareSolid());
 
     _transformation =
         Matrix4::rotationX(30.0_degf) * Matrix4::rotationY(40.0_degf);
@@ -66,11 +72,13 @@ void CompGeom::drawEvent() {
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
                                  GL::FramebufferClear::Depth);
 
+    //_shader.setLightPositions({{7.0f, 5.0f, 2.5f, 0.0f}}).draw(_mesh);
+
     _shader.setLightPositions({{7.0f, 5.0f, 2.5f, 0.0f}})
         .setDiffuseColor(_color)
         .setAmbientColor(Color3::fromHsv({_color.hue(), 1.0f, 0.3f}))
-        .setTransformationMatrix(_transformation)
-        .setNormalMatrix(_transformation.normalMatrix())
+        //.setTransformationMatrix(_transformation)
+        //.setNormalMatrix(_transformation.normalMatrix())
         .setProjectionMatrix(_projection)
         .draw(_mesh);
 
