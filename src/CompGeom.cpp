@@ -54,13 +54,15 @@ void CompGeom::drawEvent() {
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
                                  GL::FramebufferClear::Depth);
     // Render Axis and Points
-    shader_.setAmbientColor(Color3(1, 1, 1));    
-    shader_.setTransformationMatrix(Matrix4::translation(Vector3(-4, -4, 0))).draw(axis_);
-    for (int i = -4; i <= 4; i+=2) {
-        for (int j = -4; j <= 4; j+=2) {
+    shader_.setAmbientColor(Color3(1, 1, 1));
+    shader_.setTransformationMatrix(Matrix4::translation(Vector3(-4, -4, 0)))
+        .draw(axis_);
+    for (int i = -4; i <= 4; i += 2) {
+        for (int j = -4; j <= 4; j += 2) {
             shader_.setTransformationMatrix(
                 Matrix4::translation(Vector3(i, j, 0)));
-            shader_.setAmbientColor(Color3(float(i+4)/float(10), float(j+4)/float(10), 0));
+            shader_.setAmbientColor(
+                Color3(float(i + 4) / float(10), float(j + 4) / float(10), 0));
             shader_.draw(point_);
         }
     }
