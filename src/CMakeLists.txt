@@ -6,8 +6,10 @@ find_package(Magnum REQUIRED
     Sdl2Application
     Shaders
     SceneGraph
-    TinyGltfImporter
     Trade
+)
+find_package(MagnumPlugins REQUIRED 
+    TinyGltfImporter
 )
 
 set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
@@ -29,6 +31,6 @@ target_link_libraries(comp_geom PRIVATE
     Magnum::Primitives
     Magnum::SceneGraph
     Magnum::Shaders
-    Magnum::TinyGltfImporter
     Magnum::Trade
+    MagnumPlugins::TinyGltfImporter
 )

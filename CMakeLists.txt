@@ -29,5 +29,8 @@ add_subdirectory(lib/corrade EXCLUDE_FROM_ALL)
 # Add Magnum as a subproject
 add_subdirectory(lib/magnum EXCLUDE_FROM_ALL)
 
+# Add Magnum-Plugins as a subproject
+add_subdirectory(lib/magnum-plugins EXCLUDE_FROM_ALL)
+
 # Add src
 add_subdirectory(src)
