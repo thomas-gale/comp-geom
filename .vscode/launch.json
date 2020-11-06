@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/bin/comp_geom",
-            "args": ["--importer", "TinyGltfImporter", "src/scene.glb"],
+            "args": ["--importer", "TinyGltfImporter", "src/printer.gltf"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
