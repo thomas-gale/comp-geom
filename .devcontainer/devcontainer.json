@@ -16,7 +16,8 @@
 		"ms-vscode.cmake-tools",
 		"ms-vscode.cpptools",
 		"mitaki28.vscode-clang",
-		"xaver.clang-format"
+		"xaver.clang-format",
+		"robbowen.synthwave-vscode" // Very important
 	],
 
 	// Use 'forwardPorts' to make a list of ports inside the container available locally.
