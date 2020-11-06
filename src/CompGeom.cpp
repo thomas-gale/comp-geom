@@ -57,12 +57,12 @@ void CompGeom::drawEvent() {
     shader_.setAmbientColor(Color3(1, 1, 1));
     shader_.setTransformationMatrix(Matrix4::translation(Vector3(-4, -4, 0)))
         .draw(axis_);
-    for (int i = -4; i <= 4; i += 2) {
-        for (int j = -4; j <= 4; j += 2) {
+    for (int i = -4; i <= 4; ++i) {
+        for (int j = -4; j <= 4; ++j) {
             shader_.setTransformationMatrix(
-                Matrix4::translation(Vector3(i, j, 0)));
+                Matrix4::translation(Vector3(i, j, 0)) * Matrix4::scaling(Vector3(0.5, 0.5, 0)));
             shader_.setAmbientColor(
-                Color3(float(i + 4) / float(10), float(j + 4) / float(10), 0));
+                Color3(float(i + 4) / float(9), float(j + 4) / float(9), 0));
             shader_.draw(point_);
         }
     }
