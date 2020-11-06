@@ -29,7 +29,7 @@ class CompGeom : public Platform::Application {
     std::vector<Vector2> points_;
     std::vector<Vector2> generateRandomGridPoints2D(int number);
     std::vector<Vector2>
-    computeConvexHullJarvisMarch(const std::vector<Vector2>& points);
+    compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points);
 
     // Rendering components
     GL::Mesh axis_{NoCreate};
@@ -52,7 +52,7 @@ CompGeom::CompGeom(const Arguments& arguments)
 
     // Comp Geom steps.
     std::vector<Vector2> points = generateRandomGridPoints2D(20);
-    std::vector<Vector2> hull = computeConvexHullJarvisMarch(points);
+    std::vector<Vector2> hull = compute2DConvexHullJarvisMarch(points);
 
     // Render Steps
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
@@ -134,7 +134,11 @@ std::vector<Vector2> CompGeom::generateRandomGridPoints2D(int number) {
 }
 
 std::vector<Vector2>
-CompGeom::computeConvexHullJarvisMarch(const std::vector<Vector2>& points) {
+CompGeom::compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points) {
+    // Simple case anything less than triangle.
+    if (points.size() <= 3)
+        return points;
+
     // Find leftmost point in points.
     std::vector<Vector2> sorted(points);
     std::sort(sorted.begin(), sorted.end(),
@@ -142,14 +146,33 @@ CompGeom::computeConvexHullJarvisMarch(const std::vector<Vector2>& points) {
                   return lhs.x() < rhs.x();
               });
 
-    // Which is guarenteed to be part of the the convex hull.
-    std::vector<Vector2> hull{sorted.front()};
+    // Initial point on hull is the leftmost point.
+    Vector2 pointOnHull = sorted.front();
 
-    // Add couple of points
+    // Starting with empty hull, loop till wrap around to first hull point.
+    std::vector<Vector2> hull;
+    while (hull.size() == 0 || pointOnHull != hull.front()) {
+        // Add point on hull to collection
+        hull.push_back(pointOnHull);
+        // Temp endpoint
+        Vector2 endpoint = hull.front();
+        // Nest loop over all points
+        for (size_t i = 0; i < sorted.size(); ++i) {
+            Vector2 bestSeg = endpoint - hull.back();
+            Vector2 currSeg = sorted[i] - hull.back();
+            if (endpoint == pointOnHull ||
+                Math::cross(bestSeg, currSeg) > 0.0f) {
+                // Found greater left turn updated endpoint.
+                endpoint = sorted[i];
+            }
+        }
+        pointOnHull = endpoint;
+    }
 
-    // for debugging, just return the sorted points to see polyline render
-    // return hull;
-    return sorted;
+    // Append front point again to close segment
+    hull.push_back(hull.front());
+
+    return hull;
 }
 
 void CompGeom::renderPoints(const std::vector<Vector2>& points) {
