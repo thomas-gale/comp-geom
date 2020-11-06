@@ -90,29 +90,6 @@ CompGeom::CompGeom(const Arguments& arguments)
     /// Render hull
     renderPolyLine(hull);
 
-    // Render test lines.
-    /*
-    shader_.setAmbientColor(Color3(1, 0, 0));
-
-    shader_
-        .setTransformationMatrix(Matrix4::translation(Vector3(-2, 2, 1)) *
-                                 Matrix4::scaling(Vector3(4, 4, 4)))
-        .draw(line_);
-    shader_
-        .setTransformationMatrix(Matrix4::rotationZ(90.0_degf) *
-                                 Matrix4::translation(Vector3(-2, -2, 1)) *
-                                 Matrix4::scaling(Vector3(4, 4, 4)))
-        .draw(line_);
-    shader_
-        .setTransformationMatrix(Matrix4::translation(Vector3(-2, -2, 1)) *
-                                 Matrix4::scaling(Vector3(4, 4, 4)))
-        .draw(line_);
-    shader_
-        .setTransformationMatrix(Matrix4::rotationZ(90.0_degf) *
-                                 Matrix4::translation(Vector3(-2, 2, 1)) *
-                                 Matrix4::scaling(Vector3(4, 4, 4)))
-        .draw(line_);*/
-
     swapBuffers();
 }
 
