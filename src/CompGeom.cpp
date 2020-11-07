@@ -20,7 +20,7 @@
 using namespace Magnum;
 using namespace Math::Literals;
 
-using Edge2 = std::pair<Vector2, Vector2>;
+using Seg2 = std::pair<Vector2, Vector2>;
 
 class CompGeom : public Platform::Application {
   public:
@@ -32,9 +32,9 @@ class CompGeom : public Platform::Application {
     std::vector<Vector2> generateRandomGridPoints2D(int number);
     std::vector<Vector2>
     compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points);
-    std::vector<Edge2> generateEdges(int number);
+    std::vector<Seg2> generateSegs(int number);
     std::vector<Vector2>
-    findIntersectingSegmentsSweep(const std::vector<Edge2>& segements);
+    findIntersectingSegmentsSweep(const std::vector<Seg2>& segements);
 
     // Rendering components
     GL::Mesh axis_{NoCreate};
@@ -65,7 +65,7 @@ CompGeom::CompGeom(const Arguments& arguments)
     // std::vector<Vector2>
 
     // Single Intersection stuff.
-    std::vector<Edge2> pairEdges = generateEdges(2);
+    std::vector<Seg2> pairEdges = generateSegs(2);
     std::pair<float, float> intersection =
         Math::Intersection::lineSegmentLineSegment(
             pairEdges[0].first, pairEdges[0].second - pairEdges[0].first,
@@ -233,7 +233,7 @@ void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine,
 
     shader_.setAmbientColor(color);
     float offset = float(gridHeight_) / 2.0f;
-    for (int i = 1; i < polyLine.size(); ++i) {
+    for (size_t i = 1; i < polyLine.size(); ++i) {
         Vector3 start =
             Vector3(polyLine[i - 1], 0.0f) - Vector3(offset, offset, 0.0f);
         Vector3 end =
@@ -248,7 +248,7 @@ void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine,
     }
 }
 
-std::vector<Edge2> CompGeom::generateEdges(int number) {
+std::vector<Seg2> CompGeom::generateSegs(int number) {
     std::random_device rd;  // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
 
@@ -257,14 +257,22 @@ std::vector<Edge2> CompGeom::generateEdges(int number) {
     std::uniform_real_distribution<> distrUpper(
         float(gridHeight_ / 2), float(gridHeight_)); // define lower range
 
-    return {Edge2(Vector2(distrLower(gen), distrLower(gen)),
-                  Vector2(distrUpper(gen), distrUpper(gen))),
-            Edge2(Vector2(distrLower(gen), distrUpper(gen)),
-                  Vector2(distrUpper(gen), distrLower(gen)))};
+    // Generate in pairs that probable overlap.
+    std::vector<Seg2> segs;
+    for (int i = 0; i < number; ++i) {
+        if (i % 2 == 0) {
+            segs.push_back(Seg2(Vector2(distrLower(gen), distrLower(gen)),
+                                Vector2(distrUpper(gen), distrUpper(gen))));
+        } else {
+            segs.push_back(Seg2(Vector2(distrLower(gen), distrUpper(gen)),
+                                Vector2(distrUpper(gen), distrLower(gen))));
+        }
+    }
+    return segs;
 }
 
 std::vector<Vector2>
-CompGeom::findIntersectingSegmentsSweep(const std::vector<Edge2>& segments) {
+CompGeom::findIntersectingSegmentsSweep(const std::vector<Seg2>& segments) {
 
     return std::vector<Vector2>{};
 }

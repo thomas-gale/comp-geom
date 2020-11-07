@@ -16,9 +16,9 @@ set_directory_properties(PROPERTIES CORRADE_USE_PEDANTIC_FLAGS ON)
 
 add_executable(comp_geom
 CompGeom.cpp
-#TriangleExample.cpp
-#PrimitivesExample.cpp
-#ViewerExample.cpp
+#examples/TriangleExample.cpp
+#examples/PrimitivesExample.cpp
+#examples/ViewerExample.cpp
 )
 
 target_link_libraries(comp_geom PRIVATE 
