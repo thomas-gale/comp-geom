@@ -6,6 +6,7 @@
 #include <Magnum/GL/Mesh.h>
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/Math/Color.h>
+#include <Magnum/Math/Intersection.h>
 #include <Magnum/Math/Matrix4.h>
 #include <Magnum/MeshTools/Compile.h>
 #include <Magnum/Platform/Sdl2Application.h>
@@ -19,6 +20,8 @@
 using namespace Magnum;
 using namespace Math::Literals;
 
+using Edge2 = std::pair<Vector2, Vector2>;
+
 class CompGeom : public Platform::Application {
   public:
     explicit CompGeom(const Arguments& arguments);
@@ -26,10 +29,10 @@ class CompGeom : public Platform::Application {
   private:
     // Computation geometry components
     const int gridHeight_ = 10;
-    std::vector<Vector2> points_;
     std::vector<Vector2> generateRandomGridPoints2D(int number);
     std::vector<Vector2>
     compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points);
+    std::pair<Edge2, Edge2> generatePairEdges();
 
     // Rendering components
     GL::Mesh axis_{NoCreate};
@@ -39,9 +42,10 @@ class CompGeom : public Platform::Application {
     Matrix4 projection_;
 
     void drawEvent() override;
-    void renderPoints(const std::vector<Vector2>& points);
+    void renderPoints(const std::vector<Vector2>& points, const Color3& color);
     void render2DGridOfPoints(int step = 1);
-    void renderPolyLine(const std::vector<Vector2>& polyLine);
+    void renderPolyLine(const std::vector<Vector2>& polyLine,
+                        const Color3& color);
 };
 
 // Setup and perform a single render pass in the main c'tor.
@@ -51,8 +55,19 @@ CompGeom::CompGeom(const Arguments& arguments)
     GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
 
     // Comp Geom steps.
+
+    // Hull stuff.
     std::vector<Vector2> points = generateRandomGridPoints2D(20);
     std::vector<Vector2> hull = compute2DConvexHullJarvisMarch(points);
+
+    // Single Intersection stuff.
+    std::pair<Edge2, Edge2> pairEdges = generatePairEdges();
+    std::pair<float, float> intersection =
+        Math::Intersection::lineSegmentLineSegment(
+            pairEdges.first.first,
+            pairEdges.first.second - pairEdges.first.first,
+            pairEdges.second.first,
+            pairEdges.second.second - pairEdges.second.first);
 
     // Render Steps
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
@@ -85,10 +100,30 @@ CompGeom::CompGeom(const Arguments& arguments)
         .draw(axis_);
 
     // Render random points
-    renderPoints(points);
+    // renderPoints(points);
 
     /// Render hull
-    renderPolyLine(hull);
+    // renderPolyLine(hull);
+
+    // Render pair edge points
+    renderPoints({pairEdges.first.first, pairEdges.first.second,
+                  pairEdges.second.first, pairEdges.second.second},
+                 Color3(1.0f, 1.0f, 1.0f));
+
+    // Render edge pairs.
+    renderPolyLine({pairEdges.first.first, pairEdges.first.second},
+                   Color3(0.5f, 0.5f, 0.5f));
+    renderPolyLine({pairEdges.second.first, pairEdges.second.second},
+                   Color3(0.5f, 0.5f, 0.5f));
+
+    // Render intersection if exisits.
+    if (intersection.first >= 0 && intersection.first <= 1 &&
+        intersection.second >= 0 && intersection.second <= 1) {
+        renderPoints({pairEdges.first.first +
+                      (pairEdges.first.second - pairEdges.first.first) *
+                          intersection.first},
+                     Color3(1.0f, 0.0f, 0.0f));
+    }
 
     swapBuffers();
 }
@@ -152,14 +187,15 @@ CompGeom::compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points) {
     return hull;
 }
 
-void CompGeom::renderPoints(const std::vector<Vector2>& points) {
+void CompGeom::renderPoints(const std::vector<Vector2>& points,
+                            const Color3& color) {
     for (const auto& point : points) {
         shader_.setTransformationMatrix(
             Matrix4::translation(Vector3(point.x() - float(gridHeight_) / 2.0f,
                                          point.y() - float(gridHeight_) / 2.0f,
                                          0.0f)) *
             Matrix4::scaling(Vector3(0.05f, 0.05f, 0.05f)));
-        shader_.setAmbientColor(Color3(1.0f, 1.0f, 1.0f));
+        shader_.setAmbientColor(color);
         shader_.draw(point_);
     }
 }
@@ -179,12 +215,12 @@ void CompGeom::render2DGridOfPoints(int step) {
     }
 }
 
-void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine) {
+void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine,
+                              const Color3& color) {
     if (polyLine.size() < 2)
         return;
 
-    // Red color for polyline
-    shader_.setAmbientColor(Color3(1, 0, 0));
+    shader_.setAmbientColor(color);
     float offset = float(gridHeight_) / 2.0f;
     for (int i = 1; i < polyLine.size(); ++i) {
         Vector3 start =
@@ -199,6 +235,21 @@ void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine) {
                 Matrix4::scaling(Vector3((end - start).length())))
             .draw(line_);
     }
+}
+
+std::pair<Edge2, Edge2> CompGeom::generatePairEdges() {
+    std::random_device rd;  // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+
+    std::uniform_real_distribution<> distrLower(
+        0.0f, float(gridHeight_ / 2)); // define lower range
+    std::uniform_real_distribution<> distrUpper(
+        float(gridHeight_ / 2), float(gridHeight_)); // define lower range
+
+    return {Edge2(Vector2(distrLower(gen), distrLower(gen)),
+                  Vector2(distrUpper(gen), distrUpper(gen))),
+            Edge2(Vector2(distrLower(gen), distrUpper(gen)),
+                  Vector2(distrUpper(gen), distrLower(gen)))};
 }
 
 MAGNUM_APPLICATION_MAIN(CompGeom)
