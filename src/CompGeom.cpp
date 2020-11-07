@@ -43,6 +43,7 @@ class CompGeom : public Platform::Application {
     Shaders::Phong shader_;
     Matrix4 projection_;
 
+    void initRendering();
     void drawEvent() override;
     void renderPoints(const std::vector<Vector2>& points, const Color3& color);
     void renderPoints(const std::vector<Vector3>& points, const Color3& color);
@@ -55,10 +56,10 @@ class CompGeom : public Platform::Application {
 // Setup and perform a single render pass in the main c'tor.
 CompGeom::CompGeom(const Arguments& arguments)
     : Platform::Application{arguments, Configuration{}.setTitle("Comp Geom")} {
-    GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
-    GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+    // Setup rendering stuff.
+    initRendering();
 
-    // Comp Geom steps.
+    // Interesting Comp Geom things:
 
     // Hull stuff.
     // std::vector<Vector2> points = generateRandomGridPoints2D(20);
@@ -74,35 +75,7 @@ CompGeom::CompGeom(const Arguments& arguments)
     // Sweep line intersection stuff.
     std::vector<Seg2> edges = generateSegs(6);
 
-    // Render Steps
-    GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
-                                 GL::FramebufferClear::Depth);
-
-    // Initialise the meshes.
-    axis_ = MeshTools::compile(Primitives::axis3D());
-    point_ = MeshTools::compile(Primitives::squareSolid());
-    line_ = MeshTools::compile(Primitives::line3D());
-
-    // Configure fixed info for shader.
-    projection_ = Matrix4::orthographicProjection(
-        Vector2{Vector2{windowSize()}.aspectRatio() * gridHeight_ + 1,
-                float(gridHeight_ + 1)},
-        -100.0f, 100.0f);
-
-    // Turn on 3D perspective projection.
-    /*Matrix4::perspectiveProjection(
-        35.0_degf, Vector2{windowSize()}.aspectRatio(), 0.01f, 100.0f) *
-    Matrix4::translation(Vector3::zAxis(-20.0f));*/
-
-    shader_.setLightPositions({{7.0f, 5.0f, 2.5f, 0.0f}})
-        .setProjectionMatrix(projection_);
-
-    // Render axis.
-    shader_.setAmbientColor(Color3(1, 1, 1));
-    shader_
-        .setTransformationMatrix(Matrix4::translation(
-            Vector3(-(gridHeight_ / 2), -(gridHeight_ / 2), 0)))
-        .draw(axis_);
+    // Rendering things:
 
     // Render random points
     // renderPoints(points);
@@ -134,10 +107,6 @@ CompGeom::CompGeom(const Arguments& arguments)
     renderSegs2(edges, Color3(0.5f, 0.5f, 0.5f));
 
     swapBuffers();
-}
-
-void CompGeom::drawEvent() {
-    // No need for any redrawing right now.
 }
 
 std::vector<Vector2> CompGeom::generateRandomGridPoints2D(int number) {
@@ -193,6 +162,73 @@ CompGeom::compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points) {
     hull.push_back(hull.front());
 
     return hull;
+}
+
+std::vector<Seg2> CompGeom::generateSegs(int number) {
+    std::random_device rd;  // obtain a random number from hardware
+    std::mt19937 gen(rd()); // seed the generator
+
+    std::uniform_real_distribution<> distrLower(
+        0.0f, float(gridHeight_ / 2)); // define lower range
+    std::uniform_real_distribution<> distrUpper(
+        float(gridHeight_ / 2), float(gridHeight_)); // define lower range
+
+    // Generate in pairs that probable overlap.
+    std::vector<Seg2> segs;
+    for (int i = 0; i < number; ++i) {
+        if (i % 2 == 0) {
+            segs.push_back(Seg2(Vector2(distrLower(gen), distrLower(gen)),
+                                Vector2(distrUpper(gen), distrUpper(gen))));
+        } else {
+            segs.push_back(Seg2(Vector2(distrLower(gen), distrUpper(gen)),
+                                Vector2(distrUpper(gen), distrLower(gen))));
+        }
+    }
+    return segs;
+}
+
+std::vector<Vector2>
+CompGeom::findIntersectingSegmentsSweep(const std::vector<Seg2>& segments) {
+    return std::vector<Vector2>{Vector2(5, 5), Vector2(2, 3)};
+}
+
+// Rendering stuff
+void CompGeom::initRendering() {
+    GL::Renderer::enable(GL::Renderer::Feature::DepthTest);
+    GL::Renderer::enable(GL::Renderer::Feature::FaceCulling);
+
+    GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
+                                 GL::FramebufferClear::Depth);
+
+    // Initialise the meshes.
+    axis_ = MeshTools::compile(Primitives::axis3D());
+    point_ = MeshTools::compile(Primitives::squareSolid());
+    line_ = MeshTools::compile(Primitives::line3D());
+
+    // Configure fixed info for shader.
+    projection_ = Matrix4::orthographicProjection(
+        Vector2{Vector2{windowSize()}.aspectRatio() * gridHeight_ + 1,
+                float(gridHeight_ + 1)},
+        -100.0f, 100.0f);
+
+    // Turn on 3D perspective projection.
+    /*Matrix4::perspectiveProjection(
+        35.0_degf, Vector2{windowSize()}.aspectRatio(), 0.01f, 100.0f) *
+    Matrix4::translation(Vector3::zAxis(-20.0f));*/
+
+    shader_.setLightPositions({{7.0f, 5.0f, 2.5f, 0.0f}})
+        .setProjectionMatrix(projection_);
+
+    // Render axis.
+    shader_.setAmbientColor(Color3(1, 1, 1));
+    shader_
+        .setTransformationMatrix(Matrix4::translation(
+            Vector3(-(gridHeight_ / 2), -(gridHeight_ / 2), 0)))
+        .draw(axis_);
+}
+
+void CompGeom::drawEvent() {
+    // No need for any redrawing right now.
 }
 
 void CompGeom::renderPoints(const std::vector<Vector2>& points,
@@ -260,35 +296,6 @@ void CompGeom::renderSegs2(const std::vector<Seg2>& segs, const Color3& color) {
     for (size_t i = 0; i < segs.size() - 1; ++i) {
         renderPolyLine({segs[i].first, segs[i].second}, color);
     }
-}
-
-std::vector<Seg2> CompGeom::generateSegs(int number) {
-    std::random_device rd;  // obtain a random number from hardware
-    std::mt19937 gen(rd()); // seed the generator
-
-    std::uniform_real_distribution<> distrLower(
-        0.0f, float(gridHeight_ / 2)); // define lower range
-    std::uniform_real_distribution<> distrUpper(
-        float(gridHeight_ / 2), float(gridHeight_)); // define lower range
-
-    // Generate in pairs that probable overlap.
-    std::vector<Seg2> segs;
-    for (int i = 0; i < number; ++i) {
-        if (i % 2 == 0) {
-            segs.push_back(Seg2(Vector2(distrLower(gen), distrLower(gen)),
-                                Vector2(distrUpper(gen), distrUpper(gen))));
-        } else {
-            segs.push_back(Seg2(Vector2(distrLower(gen), distrUpper(gen)),
-                                Vector2(distrUpper(gen), distrLower(gen))));
-        }
-    }
-    return segs;
-}
-
-std::vector<Vector2>
-CompGeom::findIntersectingSegmentsSweep(const std::vector<Seg2>& segments) {
-
-    return std::vector<Vector2>{};
 }
 
 MAGNUM_APPLICATION_MAIN(CompGeom)
