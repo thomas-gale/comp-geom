@@ -49,6 +49,7 @@ class CompGeom : public Platform::Application {
     void render2DGridOfPoints(int step = 1);
     void renderPolyLine(const std::vector<Vector2>& polyLine,
                         const Color3& color);
+    void renderSegs2(const std::vector<Seg2>& segs, const Color3& color);
 };
 
 // Setup and perform a single render pass in the main c'tor.
@@ -60,16 +61,18 @@ CompGeom::CompGeom(const Arguments& arguments)
     // Comp Geom steps.
 
     // Hull stuff.
-    std::vector<Vector2> points = generateRandomGridPoints2D(20);
-    std::vector<Vector2> hull = compute2DConvexHullJarvisMarch(points);
-    // std::vector<Vector2>
+    // std::vector<Vector2> points = generateRandomGridPoints2D(20);
+    // std::vector<Vector2> hull = compute2DConvexHullJarvisMarch(points);
 
-    // Single Intersection stuff.
-    std::vector<Seg2> pairEdges = generateSegs(2);
-    std::pair<float, float> intersection =
+    // Single intersection stuff.
+    // std::vector<Seg2> pairEdges = generateSegs(2);
+    /*std::pair<float, float> intersection =
         Math::Intersection::lineSegmentLineSegment(
             pairEdges[0].first, pairEdges[0].second - pairEdges[0].first,
-            pairEdges[1].first, pairEdges[1].second - pairEdges[1].first);
+            pairEdges[1].first, pairEdges[1].second - pairEdges[1].first);*/
+
+    // Sweep line intersection stuff.
+    std::vector<Seg2> edges = generateSegs(6);
 
     // Render Steps
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
@@ -108,25 +111,27 @@ CompGeom::CompGeom(const Arguments& arguments)
     // renderPolyLine(hull);
 
     // Render pair edge points
-    renderPoints({pairEdges[0].first, pairEdges[0].second, pairEdges[1].first,
+    /*renderPoints({pairEdges[0].first, pairEdges[0].second, pairEdges[1].first,
                   pairEdges[1].second},
-                 Color3(1.0f, 1.0f, 1.0f));
+                 Color3(1.0f, 1.0f, 1.0f));*/
 
     // Render edge pairs.
-    renderPolyLine({pairEdges[0].first, pairEdges[0].second},
+    /*renderPolyLine({pairEdges[0].first, pairEdges[0].second},
                    Color3(0.5f, 0.5f, 0.5f));
     renderPolyLine({pairEdges[1].first, pairEdges[1].second},
-                   Color3(0.5f, 0.5f, 0.5f));
+                   Color3(0.5f, 0.5f, 0.5f));*/
 
     // Render intersection if exists.
-    if (intersection.first >= 0 && intersection.first <= 1 &&
+    /*if (intersection.first >= 0 && intersection.first <= 1 &&
         intersection.second >= 0 && intersection.second <= 1) {
         renderPoints({Vector3(pairEdges[0].first +
                                   (pairEdges[0].second - pairEdges[0].first) *
                                       intersection.first,
                               2.0f)},
                      Color3(1.0f, 0.0f, 0.0f));
-    }
+    }*/
+
+    renderSegs2(edges, Color3(0.5f, 0.5f, 0.5f));
 
     swapBuffers();
 }
@@ -245,6 +250,15 @@ void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine,
                 Matrix4::rotationY(90.0_degf) *
                 Matrix4::scaling(Vector3((end - start).length())))
             .draw(line_);
+    }
+}
+
+void CompGeom::renderSegs2(const std::vector<Seg2>& segs, const Color3& color) {
+    if (segs.size() < 1)
+        return;
+
+    for (size_t i = 0; i < segs.size() - 1; ++i) {
+        renderPolyLine({segs[i].first, segs[i].second}, color);
     }
 }
 
