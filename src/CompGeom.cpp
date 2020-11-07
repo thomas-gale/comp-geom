@@ -73,7 +73,9 @@ CompGeom::CompGeom(const Arguments& arguments)
             pairEdges[1].first, pairEdges[1].second - pairEdges[1].first);*/
 
     // Sweep line intersection stuff.
-    std::vector<Seg2> edges = generateSegs(6);
+    std::vector<Seg2> segments = generateSegs(6);
+    std::vector<Vector2> intersections =
+        findIntersectingSegmentsSweep(segments);
 
     // Rendering things:
 
@@ -104,7 +106,8 @@ CompGeom::CompGeom(const Arguments& arguments)
                      Color3(1.0f, 0.0f, 0.0f));
     }*/
 
-    renderSegs2(edges, Color3(0.5f, 0.5f, 0.5f));
+    renderSegs2(segments, Color3(0.5f, 0.5f, 0.5f));
+    renderPoints(intersections, Color3(1.0f, 0.0f, 0.0f));
 
     swapBuffers();
 }
