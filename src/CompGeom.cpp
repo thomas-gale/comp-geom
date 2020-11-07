@@ -32,7 +32,9 @@ class CompGeom : public Platform::Application {
     std::vector<Vector2> generateRandomGridPoints2D(int number);
     std::vector<Vector2>
     compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points);
-    std::pair<Edge2, Edge2> generatePairEdges();
+    std::vector<Edge2> generateEdges(int number);
+    std::vector<Vector2>
+    findIntersectingSegmentsSweep(const std::vector<Edge2>& segements);
 
     // Rendering components
     GL::Mesh axis_{NoCreate};
@@ -60,15 +62,14 @@ CompGeom::CompGeom(const Arguments& arguments)
     // Hull stuff.
     std::vector<Vector2> points = generateRandomGridPoints2D(20);
     std::vector<Vector2> hull = compute2DConvexHullJarvisMarch(points);
+    // std::vector<Vector2>
 
     // Single Intersection stuff.
-    std::pair<Edge2, Edge2> pairEdges = generatePairEdges();
+    std::vector<Edge2> pairEdges = generateEdges(2);
     std::pair<float, float> intersection =
         Math::Intersection::lineSegmentLineSegment(
-            pairEdges.first.first,
-            pairEdges.first.second - pairEdges.first.first,
-            pairEdges.second.first,
-            pairEdges.second.second - pairEdges.second.first);
+            pairEdges[0].first, pairEdges[0].second - pairEdges[0].first,
+            pairEdges[1].first, pairEdges[1].second - pairEdges[1].first);
 
     // Render Steps
     GL::defaultFramebuffer.clear(GL::FramebufferClear::Color |
@@ -107,22 +108,22 @@ CompGeom::CompGeom(const Arguments& arguments)
     // renderPolyLine(hull);
 
     // Render pair edge points
-    renderPoints({pairEdges.first.first, pairEdges.first.second,
-                  pairEdges.second.first, pairEdges.second.second},
+    renderPoints({pairEdges[0].first, pairEdges[0].second, pairEdges[1].first,
+                  pairEdges[1].second},
                  Color3(1.0f, 1.0f, 1.0f));
 
     // Render edge pairs.
-    renderPolyLine({pairEdges.first.first, pairEdges.first.second},
+    renderPolyLine({pairEdges[0].first, pairEdges[0].second},
                    Color3(0.5f, 0.5f, 0.5f));
-    renderPolyLine({pairEdges.second.first, pairEdges.second.second},
+    renderPolyLine({pairEdges[1].first, pairEdges[1].second},
                    Color3(0.5f, 0.5f, 0.5f));
 
-    // Render intersection if exisits.
+    // Render intersection if exists.
     if (intersection.first >= 0 && intersection.first <= 1 &&
         intersection.second >= 0 && intersection.second <= 1) {
-        renderPoints({Vector3(pairEdges.first.first + (pairEdges.first.second -
-                                                       pairEdges.first.first) *
-                                                          intersection.first,
+        renderPoints({Vector3(pairEdges[0].first +
+                                  (pairEdges[0].second - pairEdges[0].first) *
+                                      intersection.first,
                               2.0f)},
                      Color3(1.0f, 0.0f, 0.0f));
     }
@@ -247,7 +248,7 @@ void CompGeom::renderPolyLine(const std::vector<Vector2>& polyLine,
     }
 }
 
-std::pair<Edge2, Edge2> CompGeom::generatePairEdges() {
+std::vector<Edge2> CompGeom::generateEdges(int number) {
     std::random_device rd;  // obtain a random number from hardware
     std::mt19937 gen(rd()); // seed the generator
 
@@ -260,6 +261,12 @@ std::pair<Edge2, Edge2> CompGeom::generatePairEdges() {
                   Vector2(distrUpper(gen), distrUpper(gen))),
             Edge2(Vector2(distrLower(gen), distrUpper(gen)),
                   Vector2(distrUpper(gen), distrLower(gen)))};
+}
+
+std::vector<Vector2>
+CompGeom::findIntersectingSegmentsSweep(const std::vector<Edge2>& segments) {
+
+    return std::vector<Vector2>{};
 }
 
 MAGNUM_APPLICATION_MAIN(CompGeom)
