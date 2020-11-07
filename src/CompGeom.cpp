@@ -43,6 +43,7 @@ class CompGeom : public Platform::Application {
 
     void drawEvent() override;
     void renderPoints(const std::vector<Vector2>& points, const Color3& color);
+    void renderPoints(const std::vector<Vector3>& points, const Color3& color);
     void render2DGridOfPoints(int step = 1);
     void renderPolyLine(const std::vector<Vector2>& polyLine,
                         const Color3& color);
@@ -119,9 +120,10 @@ CompGeom::CompGeom(const Arguments& arguments)
     // Render intersection if exisits.
     if (intersection.first >= 0 && intersection.first <= 1 &&
         intersection.second >= 0 && intersection.second <= 1) {
-        renderPoints({pairEdges.first.first +
-                      (pairEdges.first.second - pairEdges.first.first) *
-                          intersection.first},
+        renderPoints({Vector3(pairEdges.first.first + (pairEdges.first.second -
+                                                       pairEdges.first.first) *
+                                                          intersection.first,
+                              2.0f)},
                      Color3(1.0f, 0.0f, 0.0f));
     }
 
@@ -189,11 +191,19 @@ CompGeom::compute2DConvexHullJarvisMarch(const std::vector<Vector2>& points) {
 
 void CompGeom::renderPoints(const std::vector<Vector2>& points,
                             const Color3& color) {
+    std::vector<Vector3> points3(points.size());
+    std::transform(points.begin(), points.end(), points3.begin(),
+                   [](const Vector2 vec2) { return Vector3(vec2, 0.0f); });
+    renderPoints(points3, color);
+}
+
+void CompGeom::renderPoints(const std::vector<Vector3>& points,
+                            const Color3& color) {
     for (const auto& point : points) {
         shader_.setTransformationMatrix(
             Matrix4::translation(Vector3(point.x() - float(gridHeight_) / 2.0f,
                                          point.y() - float(gridHeight_) / 2.0f,
-                                         0.0f)) *
+                                         point.z())) *
             Matrix4::scaling(Vector3(0.05f, 0.05f, 0.05f)));
         shader_.setAmbientColor(color);
         shader_.draw(point_);
