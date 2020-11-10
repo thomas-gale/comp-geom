@@ -22,6 +22,24 @@ using namespace Math::Literals;
 
 using Seg2 = std::pair<Vector2, Vector2>;
 
+class Event {
+  private:
+    const double EPS_ = 1e-9;
+
+  public:
+    double x;
+    int type; // +1 == Start, -1 == End
+    int id;
+
+    Event(double x, double type, double id) : x(x), type(type), id(id){};
+
+    bool operator<(const Event& e) const {
+        if (Math::abs(x - e.x) > EPS_)
+            return x < e.x;   // Normal case
+        return type > e.type; // Vertical case - ensures correct ordering.
+    }
+};
+
 class CompGeom : public Platform::Application {
   public:
     explicit CompGeom(const Arguments& arguments);
@@ -190,8 +208,21 @@ std::vector<Seg2> CompGeom::generateSegs(int number) {
     return segs;
 }
 
+// Using https://cp-algorithms.com/geometry/intersecting_segments.html
+// For reference implementation.
 std::vector<Vector2>
 CompGeom::findIntersectingSegmentsSweep(const std::vector<Seg2>& segments) {
+    int n = segments.size();
+
+    // Populate events from start and ends of segments.
+    std::vector<Event> e;
+    for (int i = 0; i < n; ++i) {
+        e.push_back(Event(
+            Math::min(segments[i].first.x(), segments[i].second.x()), +1, i));
+        e.push_back(Event(
+            Math::max(segments[i].first.x(), segments[i].second.x()), -1, i));
+    }
+
     return std::vector<Vector2>{Vector2(5, 5), Vector2(2, 3)};
 }
 
