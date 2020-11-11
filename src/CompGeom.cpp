@@ -1,5 +1,7 @@
 #include <algorithm>
+#include <limits>
 #include <random>
+#include <set>
 #include <vector>
 
 #include <Magnum/GL/DefaultFramebuffer.h>
@@ -20,21 +22,56 @@
 using namespace Magnum;
 using namespace Math::Literals;
 
-using Seg2 = std::pair<Vector2, Vector2>;
+const float EPS = 1e-9;
+
+class Seg2 {
+  public:
+    Vector2 p;
+    Vector2 q;
+    Seg2(Vector2 p, Vector2 q) : p(p), q(q){};
+
+    // Helper function which returns y position at x along segment.
+    float getY(float x) const {
+        // If vertical
+        if (std::abs(p.x() - q.x()) < EPS)
+            return p.y();
+        // Normal case.       
+        return p.y() + (q.y() - p.y()) * (x - p.x()) / (q.x() - p.x());
+    };
+
+    bool doesIntersect(const Seg2& other) const {
+        std::pair<float, float> i = Math::Intersection::lineSegmentLineSegment(
+            p, q - p, other.p, other.q - other.p);
+        return i.first >= 0 && i.first <= 1 && i.second >= 0 && i.second <= 1;
+    };
+
+    Vector2 intersection(const Seg2& other) const {
+        // Check preconditon
+        if (!doesIntersect(other))
+            return Vector2(std::numeric_limits<double>::quiet_NaN(),
+                           std::numeric_limits<double>::quiet_NaN());
+        std::pair<float, float> i = Math::Intersection::lineSegmentLineSegment(
+            p, q - p, other.p, other.q - other.p);
+        return p + (q - p) * i.first;
+    }
+
+    friend bool operator<(const Seg2& lhs, const Seg2& rhs) {
+        float x = std::max(std::min(lhs.p.x(), lhs.q.x()),
+                           std::min(rhs.p.x(), rhs.q.x()));
+        return lhs.getY(x) < rhs.getY(x) - EPS;
+    };
+};
 
 class Event {
-  private:
-    const double EPS_ = 1e-9;
-
   public:
-    double x;
+    float x;
     int type; // +1 == Start, -1 == End
     int id;
 
-    Event(double x, double type, double id) : x(x), type(type), id(id){};
+    Event(float x, float type, float id) : x(x), type(type), id(id){};
 
     bool operator<(const Event& e) const {
-        if (Math::abs(x - e.x) > EPS_)
+        if (Math::abs(x - e.x) > EPS)
             return x < e.x;   // Normal case
         return type > e.type; // Vertical case - ensures correct ordering.
     }
@@ -92,6 +129,12 @@ CompGeom::CompGeom(const Arguments& arguments)
 
     // Sweep line intersection stuff.
     std::vector<Seg2> segments = generateSegs(6);
+
+    /*std::vector<Seg2> segments = {
+        Seg2(Vector2(1, 1), Vector2(2, 2)),
+        Seg2(Vector2(1, 2), Vector2(2, 1))
+    };*/
+
     std::vector<Vector2> intersections =
         findIntersectingSegmentsSweep(segments);
 
@@ -208,22 +251,65 @@ std::vector<Seg2> CompGeom::generateSegs(int number) {
     return segs;
 }
 
+// Circular prev.
+std::set<Seg2>::iterator prev(const std::set<Seg2>& s,
+                              std::set<Seg2>::iterator it) {
+    return it == s.begin() ? s.end() : --it;
+}
+
+// Circular next.
+std::set<Seg2>::iterator next(std::set<Seg2>::iterator it) { return ++it; }
+
 // Using https://cp-algorithms.com/geometry/intersecting_segments.html
 // For reference implementation.
 std::vector<Vector2>
-CompGeom::findIntersectingSegmentsSweep(const std::vector<Seg2>& segments) {
-    int n = segments.size();
-
+CompGeom::findIntersectingSegmentsSweep(const std::vector<Seg2>& segs) {
     // Populate events from start and ends of segments.
+    int n = segs.size();
     std::vector<Event> e;
     for (int i = 0; i < n; ++i) {
-        e.push_back(Event(
-            Math::min(segments[i].first.x(), segments[i].second.x()), +1, i));
-        e.push_back(Event(
-            Math::max(segments[i].first.x(), segments[i].second.x()), -1, i));
+        e.push_back(
+            Event(Math::min(segs[i].p.x(), segs[i].q.x()), +1, i));
+        e.push_back(
+            Event(Math::max(segs[i].p.x(), segs[i].q.x()), -1, i));
+    }
+    std::sort(e.begin(), e.end());
+
+    // Dynamic data stored in sweep line.
+    std::set<Seg2> s;
+    std::vector<std::set<Seg2>::iterator> where(segs.size());
+
+    // Result data.
+    std::vector<Vector2> resPoints;
+
+    // Run sweep through events.
+    for (size_t i = 0; i < e.size(); ++i) {
+        int id = e[i].id;
+        // Start of segment
+        if (e[i].type == +1) {
+            std::set<Seg2>::iterator nxt = s.lower_bound(segs[id]);
+            std::set<Seg2>::iterator prv = prev(s, nxt);
+
+            // Using the circular iterator helper function for start.
+            if (nxt != s.end() && nxt->doesIntersect(segs[id]))
+                resPoints.push_back(nxt->intersection(segs[id]));
+            if (prv != s.end() && prv->doesIntersect(segs[id]))
+                resPoints.push_back(prv->intersection(segs[id]));
+
+            where[id] = s.insert(nxt, segs[id]);
+
+        } else {
+            // End of segment
+            std::set<Seg2>::iterator nxt = next(where[id]);
+            std::set<Seg2>::iterator prv = prev(s, where[id]);
+            if (nxt != s.end() && prv != s.end() && nxt->doesIntersect(*prv))
+                resPoints.push_back(prv->intersection(*nxt));
+            s.erase(where[id]);
+        }
     }
 
-    return std::vector<Vector2>{Vector2(5, 5), Vector2(2, 3)};
+    // Return results
+    return resPoints;
 }
 
 // Rendering stuff
@@ -327,8 +413,8 @@ void CompGeom::renderSegs2(const std::vector<Seg2>& segs, const Color3& color) {
     if (segs.size() < 1)
         return;
 
-    for (size_t i = 0; i < segs.size() - 1; ++i) {
-        renderPolyLine({segs[i].first, segs[i].second}, color);
+    for (size_t i = 0; i < segs.size(); ++i) {
+        renderPolyLine({segs[i].p, segs[i].q}, color);
     }
 }
 
