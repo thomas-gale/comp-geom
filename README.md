@@ -17,9 +17,5 @@ Using built in [intersection tools](https://doc.magnum.graphics/magnum/namespace
 
 ![HelloIntersection](https://user-images.githubusercontent.com/11990706/98441765-54b41b80-20f8-11eb-9f4f-421fda88601e.png)
 
-## Building
-- Docker
-- VSCode + Devcontainers
-- Clone + init submodules
-- Reopen in Container
+## [Development Setup](https://gist.github.com/thomas-gale/70987288d4aed1b6e6b9086341a55fa2)
 - CMake configure + build
